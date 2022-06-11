@@ -1,3 +1,5 @@
+--- Constants
+
 Family = {
     MOUSE = "mouse"
 }
@@ -27,13 +29,15 @@ MouseButton = {
     X2 = 5
 }
 
+--- Scripts
+
 Configuration = {
     TOGGLE = MouseButtonEvent.MIDDLE,
     FIRE = MouseButtonEvent.LEFT,
     AIM = MouseButtonEvent.RIGHT,
     PREV = MouseButtonEvent.SCROLL_LEFT,
     NEXT = MouseButtonEvent.SCROLL_RIGHT,
-    DEBOUNCE_DELAY_MS = 30,
+    DEBOUNCE_DELAY_MS = 40,
 }
 
 DebouncedButton = {
@@ -58,7 +62,8 @@ function DebouncedButton:isPressed()
     return self.state == self.PRESSED
 end
 
-function DebouncedButton:switch()
+function DebouncedButton:switch(new_state)
+    self.state = new_state
     if self:isPressed() then
         PressMouseButton(self.button)
         OutputLogMessage("\tButton %s pressed\n", self.button)
@@ -72,11 +77,9 @@ function DebouncedButton:onEvent(new_state)
     local sinceLastDebounce = GetRunningTime() - self.lastDebounceTime
     self.lastDebounceTime = GetRunningTime()
     if sinceLastDebounce > self.debounce_delay then
-        OutputLogMessage("Since last debounce of button %s: %sms\n", self.button, sinceLastDebounce)
-        self.state = new_state
-        self:switch()
+        self:switch(new_state)
     else
-        OutputLogMessage("\tButton %s debounced\n", self.button)
+        OutputLogMessage("\tButton %s debounced: %sms\n", self.button, sinceLastDebounce)
     end
 end
 
@@ -116,7 +119,7 @@ AutoPower = {
 
 Mouse = {
     leftButton = DebouncedButton:new{button = MouseButton.LEFT},
-    rightButton = DebouncedButton:new{button = MouseButton.RIGHT, debounce_delay = 75},
+    rightButton = DebouncedButton:new{button = MouseButton.RIGHT, debounce_delay = 40},
 
     onEvent = function(self, event, arg)
         if arg == Configuration.FIRE then
@@ -135,11 +138,11 @@ Mouse = {
     end
 }
 
+EnablePrimaryMouseButtonEvents(true)
 function OnEvent(event, arg, family)
     OutputLogMessage("runtime = %sms, event = %s, arg = %s, family = %s\n", GetRunningTime(), event, arg, family)
     if family == Family.MOUSE then
         Mouse:onEvent(event, arg)
     end
 end
-EnablePrimaryMouseButtonEvents(true)
-OutputLogMessage("Starting AutoPower\n")
+OutputLogMessage("AutoPower Started\n")
